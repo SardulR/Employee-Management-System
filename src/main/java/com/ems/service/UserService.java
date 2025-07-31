@@ -1,71 +1,95 @@
 package com.ems.service;
 
-import com.ems.dto.UserDto;
+import com.ems.dto.request.UserRequestDto;
+import com.ems.dto.response.UserResponseDto;
 import com.ems.entity.User;
 import com.ems.enums.Role;
 import com.ems.mapper.ModelMapper;
 import com.ems.repository.UserRepo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
     @Autowired
     private UserRepo userRepo;
 
 
-    public User createUser(UserDto user){
+    public UserResponseDto createUser(UserRequestDto user){
 
         boolean exists = userRepo.existsByEmail(user.getEmail());
         if(exists){
             throw new RuntimeException("User with this email already exists");
         }
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        String username = generateEmployeeId(user.getRole());
+        String password =String.valueOf((int) (Math.random() * 100000));
+        log.info(password);
+        String encodedPassword = passwordEncoder.encode(password);
 
         User newUser = ModelMapper.toUser(user);
-        newUser.setUsername(generateEmployeeId(user.getRole()));
-        newUser.setPassword(String.valueOf((int)(Math.random()*100000)));
+        newUser.setUsername(username);
+        newUser.setPassword(encodedPassword);
 
-        return userRepo.save(newUser);
+        User saved = userRepo.save(newUser);
+        return ModelMapper.toUserResponseDto(saved);
     }
+
+
 
     private String generateEmployeeId(Role role) {
         long count = userRepo.count() + 1;
         String username = "";
         if(role.equals(Role.MANAGER)){
-            return String.format("MGR%03d", count);
+            username = String.format("MGR%03d", count);
         }
-        return String.format("EMP%04d", count);
+        else{
+            username = String.format("EMP%04d", count);
+        }
          // EMP001, EMP002...
+        return username;
     }
 
-    public List<User> getAllUsers() {
-        return userRepo.findAll();
+    public List<UserResponseDto> getAllUsers() {
+        List<User> res = userRepo.findAll();
+        ArrayList<UserResponseDto> users = new ArrayList<>();
+        for (User user : res) {
+            users.add(ModelMapper.toUserResponseDto(user));
+        }
+        return users;
     }
 
-    public User getUserByUsername(String username) {
+    public UserResponseDto getUserByUsername(String username) {
         User user = userRepo.findByUsername(username);
         if(user == null) {
             throw new RuntimeException("User not found with username: " + username);
         }
-        return user;
+        return ModelMapper.toUserResponseDto(user);
     }
 
-    public User updateUser(String username, UserDto userDto) {
+    public UserResponseDto updateUser(String username, UserRequestDto userRequestDto) {
         User existingUser = userRepo.findByUsername(username);
         if(existingUser == null) {
             throw new RuntimeException("User not found with username: " + username);
         }
 
-        existingUser.setName(userDto.getName());
-        existingUser.setPhone(userDto.getPhone());
-        existingUser.setEmail(userDto.getEmail());
-        existingUser.setAddress(userDto.getAddress());
-        existingUser.setDepartment(userDto.getDepartment());
+        existingUser.setName(userRequestDto.getName());
+        existingUser.setPhone(userRequestDto.getPhone());
+        existingUser.setEmail(userRequestDto.getEmail());
+        existingUser.setAddress(userRequestDto.getAddress());
+        existingUser.setDepartment(userRequestDto.getDepartment());
 
-        return userRepo.save(existingUser);
+        User saved = userRepo.save(existingUser);
+        return ModelMapper.toUserResponseDto(saved);
     }
 
     public void deleteUser(String username) {
@@ -76,7 +100,7 @@ public class UserService {
         userRepo.delete(user);
     }
 
-    public User updateByColumn(String username, String columnName, String value) {
+    public UserResponseDto updateByColumn(String username, String columnName, String value) {
         User user = userRepo.findByUsername(username);
         if(user == null) {
             throw new RuntimeException("User not found with username: " + username);
@@ -105,6 +129,7 @@ public class UserService {
                 throw new RuntimeException("Invalid column name: " + columnName);
         }
 
-        return userRepo.save(user);
+        User saved = userRepo.save(user);
+        return ModelMapper.toUserResponseDto(saved);
     }
 }
