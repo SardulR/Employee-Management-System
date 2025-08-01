@@ -6,6 +6,7 @@ import com.ems.entity.User;
 import com.ems.enums.Role;
 import com.ems.mapper.ModelMapper;
 import com.ems.repository.UserRepo;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,10 @@ public class UserService {
     @Autowired
     private UserRepo userRepo;
 
+    @Autowired
+    private EmailService emailService;
 
+    @Transactional
     public UserResponseDto createUser(UserRequestDto user){
 
         boolean exists = userRepo.existsByEmail(user.getEmail());
@@ -40,6 +44,8 @@ public class UserService {
         newUser.setUsername(username);
         newUser.setPassword(encodedPassword);
 
+        emailService.sendEmail(user.getEmail(), "Welcome to EMS",
+                "Your account has been created successfully. \nUsername: " + username + "\nPassword: " + password);
         User saved = userRepo.save(newUser);
         return ModelMapper.toUserResponseDto(saved);
     }
@@ -47,10 +53,10 @@ public class UserService {
 
 
     private String generateEmployeeId(Role role) {
-        long count = userRepo.count() + 1;
+        long count = userRepo.countUserByRole(role) + 1;
         String username = "";
-        if(role.equals(Role.MANAGER)){
-            username = String.format("MGR%03d", count);
+        if(role.equals(Role.ADMIN)){
+            username = String.format("ADM%02d", count);
         }
         else{
             username = String.format("EMP%04d", count);
