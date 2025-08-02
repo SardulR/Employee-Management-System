@@ -20,6 +20,8 @@ public class ModelMapper {
                 .address(userRequestDto.getAddress())
                 .department(userRequestDto.getDepartment())
                 .role(userRequestDto.getRole())
+                .hire_date(userRequestDto.getHire_date())
+                .salary(userRequestDto.getSalary())
                 .build();
 
         return newUser;
@@ -35,6 +37,8 @@ public class ModelMapper {
         userResponseDto.setAddress(user.getAddress());
         userResponseDto.setDepartment(user.getDepartment());
         userResponseDto.setRole(user.getRole());
+        userResponseDto.setHire_date(user.getHire_date());
+        userResponseDto.setSalary(user.getSalary());
         return userResponseDto;
     }
 

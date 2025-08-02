@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/user/update/**").hasAnyRole("EMPLOYEE", "ADMIN")
                          // admin only endpoints
                         .requestMatchers("/user/**",  "/leaves/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/attendance/all").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -49,9 +50,4 @@ public class SecurityConfig {
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
-
-
-
-
-
 }

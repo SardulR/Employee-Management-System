@@ -55,6 +55,12 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Column(nullable = false)
+    private String hire_date;
+
+    @Column(nullable = false)
+    private float salary;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

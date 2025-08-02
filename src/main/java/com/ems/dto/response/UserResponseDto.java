@@ -13,4 +13,6 @@ public class UserResponseDto {
     private String address;
     private String department;
     private Role role;
+    private String hire_date;
+    private float salary;
 }
