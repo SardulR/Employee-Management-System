@@ -4,6 +4,7 @@ import com.ems.entity.Attendance;
 import com.ems.enums.AttendanceStatus;
 import com.ems.repository.AttendanceRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -77,6 +78,10 @@ public class AttendanceService {
 
     public List<Attendance> findAllAttendanceOfUser(String username){
         return attendanceRepo.findByUsername(username);
+    }
+
+    public List<Attendance> findAttendanceByMonthAndYear(@Param("month") int month, @Param("year") int year){
+        return attendanceRepo.findByMonthAndYear(month, year);
     }
 
 

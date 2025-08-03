@@ -42,6 +42,9 @@ public class SecurityConfig {
                          // admin only endpoints
                         .requestMatchers("/user/**",  "/leaves/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/attendance/all").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/payroll/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/payroll/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/payroll/all").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
