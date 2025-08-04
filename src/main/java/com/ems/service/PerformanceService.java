@@ -21,14 +21,14 @@ public class PerformanceService {
     @Autowired
     private UserRepo userRepo;
 
-    public double calculatePerformance(String username) {
+    public float calculatePerformance(String username) {
         boolean existUser = userRepo.existsByUsername(username);
         if (!existUser) {
             throw new IllegalArgumentException("User does not exist");
         }
         List<Task> tasks = taskService.getTasksByUsername(username);
         if(tasks.isEmpty()) {
-            return 0.0; // No tasks, performance is 0
+            return 0; // No tasks, performance is 0
         }
 
 
@@ -36,20 +36,20 @@ public class PerformanceService {
                 .filter(Task::isCompleted)
                 .toList();
 
-        double completedPoints = completedTasks.stream()
+        float completedPoints = completedTasks.stream()
                 .mapToInt(Task::getPoints)
                 .sum();
 
-        double totalPoints = tasks.stream()
+        float totalPoints = tasks.stream()
                 .mapToInt(Task::getPoints)
                 .sum();
 
-        double performance = totalPoints > 0 ? (double) (completedPoints / totalPoints) * 10 : 0;
-        return performance;
+        float performance = totalPoints > 0 ? (float) (completedPoints / totalPoints) * 100 : 0;
+        return Math.round(performance * 100.0f) / 100.0f; // Round to 2 decimal places
     }
 
     public Performance savePerformance(String username){
-        double performance = calculatePerformance(username);
+        float performance = calculatePerformance(username);
         Performance performanceEntity = new Performance();
         performanceEntity.setUsername(username);
         performanceEntity.setPerformanceScore(performance);
@@ -57,7 +57,7 @@ public class PerformanceService {
     }
 
     public Performance updatePerformance(String username, Performance performance) {
-        double newScore = calculatePerformance(username);
+        float newScore = calculatePerformance(username);
         performance.setPerformanceScore(newScore);
         return performanceRepo.save(performance);
     }

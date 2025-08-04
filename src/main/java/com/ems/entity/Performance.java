@@ -16,5 +16,5 @@ public class Performance {
     private String username;
 
     @Column(name = "performance_score", nullable = false)
-    private double performanceScore;
+    private float performanceScore;
 }
