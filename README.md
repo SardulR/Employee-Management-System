@@ -1,216 +1,407 @@
-# Employee Management System (EMS) - API Documentation
+# Employee Management System (EMS) API
 
-## Introduction
+A comprehensive REST API for managing employees, attendance, leave requests, and payroll in an organization.
 
-Welcome to the Employee Management System (EMS) API. This document provides a comprehensive guide for developers. The system is designed to manage users (employees) and their leave requests through a RESTful API. It's intended for use by front-end applications or other services that need to programmatically interact with employee and leave data.
+## Table of Contents
 
-This API uses JSON for all data interchange and standard HTTP response codes to indicate the status of requests.
+- [Overview](#overview)
+- [Base URL](#base-url)
+- [Authentication](#authentication)
+- [API Endpoints](#api-endpoints)
+  - [User Management](#user-management)
+  - [Authentication](#authentication-endpoints)
+  - [Leave Management](#leave-management)
+  - [Attendance Management](#attendance-management)
+  - [Payroll Management](#payroll-management)
+- [Access Levels](#access-levels)
+- [Response Formats](#response-formats)
+- [Getting Started](#getting-started)
 
-## Getting Started
+## Overview
 
-### Base URL
-All API endpoints are relative to the following base URL:
-`http://localhost:8080`
+The Employee Management System API provides endpoints for:
+- User registration and management
+- Authentication and authorization
+- Leave request management
+- Attendance tracking
+- Payroll generation and management
 
-### Authentication
-Most endpoints are protected and require authentication. The EMS API uses JSON Web Tokens (JWT) for this purpose.
+## Base URL
 
-To authenticate, you must first call the `/auth/login` endpoint with a valid username and password. The server will respond with a JWT Bearer token. This token must then be included in the `Authorization` header for all subsequent requests to protected endpoints.
+```
+http://localhost:8080
+```
 
-**Example Header:**
-`Authorization: Bearer <your_jwt_token>`
+Replace `{{baseURL}}` in all endpoints with your actual server URL.
 
-### User Roles
-The API defines two primary user roles, which dictate access to certain endpoints:
-* **EMPLOYEE:** Standard users. They can manage their own profile and leave requests.
-* **ADMIN:** Privileged users. They have full access to manage all users and all leave requests in the system.
+## Authentication
 
----
+Most endpoints require authentication using a Bearer Token. Include the token in the Authorization header:
+
+```
+Authorization: Bearer <your-token-here>
+```
+
+To obtain a token, use the `/auth/login` endpoint.
 
 ## API Endpoints
 
-### 1. Authentication
+### User Management
 
-#### Login
-Authenticates a user and provides a JWT token required for accessing protected routes.
+#### Register User
+Creates a new user in the system.
 
-* **Endpoint:** `POST /auth/login`
-* **Access:** Public
-* **Request Body:**
-    ```json
-    {
-        "username": "your_username",
-        "password": "your_password"
-    }
-    ```
-* **Success Response (200 OK):**
-    ```json
-    {
-        "token": "ey...",
-        "username": "your_username"
-    }
-    ```
-* **Error Response (401 Unauthorized):**
-    ```json
-    {
-        "timestamp": "2025-08-01T04:30:00.000+00:00",
-        "status": 401,
-        "error": "Unauthorized",
-        "message": "Invalid credentials",
-        "path": "/auth/login"
-    }
-    ```
+```http
+POST {{baseURL}}/user/create
+```
 
----
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
 
-### 2. User Management
-
-#### Create a New User (Register)
-Creates a new user account.
-
-* **Endpoint:** `POST /user/create`
-* **Access:** ADMIN only
-* **Authorization:** Bearer Token
-* **Request Body:**
-    ```json
-    {
-        "name": "Full Name",
-        "phone": "1234567890",
-        "email": "user@example.com",
-        "address": "User Address",
-        "department": "IT",
-        "role": "EMPLOYEE"
-    }
-    ```
-* **Success Response (201 Created):** Returns the details of the newly created user.
-* **Error Responses:**
-    * `400 Bad Request`: If the request body contains invalid data (e.g., missing fields, invalid email format).
-    * `403 Forbidden`: If a non-admin user attempts to access this endpoint.
+**Request Body:**
+```json
+{
+    "name": "John Doe",
+    "phone": "9876543210",
+    "email": "john.doe@example.com",
+    "address": "Anytown, USA",
+    "department": "IT",
+    "role": "EMPLOYEE",
+    "hire_date": "2025-08-01",
+    "salary": 50000
+}
+```
 
 #### Get All Users
-Retrieves a list of all users in the system.
+Retrieves a list of all users.
 
-* **Endpoint:** `GET /user/all`
-* **Access:** ADMIN only
-* **Authorization:** Bearer Token
-* **Success Response (200 OK):** Returns an array of user objects.
-* **Error Response (403 Forbidden):** If a non-admin user attempts to access this endpoint.
+```http
+GET {{baseURL}}/user/all
+```
 
-#### Get Logged-in User Details
-Retrieves the profile information of the currently authenticated user.
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
 
-* **Endpoint:** `GET /user/me`
-* **Access:** EMPLOYEE, ADMIN
-* **Authorization:** Bearer Token
-* **Success Response (200 OK):** Returns the user object for the authenticated user.
-* **Error Response (401 Unauthorized):** If the JWT is missing or invalid.
+#### Get Current Employee
+Retrieves details of the currently authenticated employee.
+
+```http
+GET {{baseURL}}/user/me
+```
+
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
 
 #### Update User Details
-Updates the profile information for the currently authenticated user.
+Updates the details of an existing user.
 
-* **Endpoint:** `PUT /user/update`
-* **Access:** EMPLOYEE, ADMIN
-* **Authorization:** Bearer Token
-* **Request Body:**
-    ```json
-    {
-        "name": "Updated Name",
-        "phone": "0987654321",
-        "email": "updated@example.com",
-        "address": "Updated Address",
-        "department": "HR"
-    }
-    ```
-* **Success Response (200 OK):** Returns the updated user object.
-* **Error Response (400 Bad Request):** If the request body contains invalid data.
+```http
+PUT {{baseURL}}/user/update
+```
+
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Request Body:**
+```json
+{
+    "name": "Jane Smith",
+    "phone": "1234567890",
+    "email": "jane.smith@example.com",
+    "address": "Somecity, USA",
+    "department": "HR",
+    "role": "MANAGER"
+}
+```
 
 #### Change User Role
-Allows an administrator to modify the role of any user.
+Changes the role of a specified user.
 
-* **Endpoint:** `PUT /user/change-role`
-* **Access:** ADMIN only
-* **Authorization:** Bearer Token
-* **Query Parameters:**
-    * `username` (string, required): The username of the user to modify (e.g., `EMP0001`).
-    * `role` (string, required): The new role to assign (`EMPLOYEE` or `ADMIN`).
-* **Success Response (200 OK):** A confirmation message.
-* **Error Responses:**
-    * `403 Forbidden`: If a non-admin user attempts access.
-    * `404 Not Found`: If the specified `username` does not exist.
+```http
+PUT {{baseURL}}/user/change-role?username={username}&role={role}
+```
 
-#### Delete a User
-Permanently removes a user from the system.
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
 
-* **Endpoint:** `DELETE /user/delete`
-* **Access:** ADMIN only
-* **Authorization:** Bearer Token
-* **Query Parameters:**
-    * `username` (string, required): The username of the user to delete.
-* **Success Response (200 OK):** A confirmation message.
-* **Error Responses:**
-    * `403 Forbidden`: If a non-admin user attempts access.
-    * `404 Not Found`: If the specified `username` does not exist.
+**Query Parameters:**
+- `username`: The unique identifier of the user (e.g., user001)
+- `role`: The new role for the user (ADMIN, EMPLOYEE, MANAGER)
 
----
+#### Delete User
+Deletes a user from the system.
 
-### 3. Leave Management
+```http
+DELETE {{baseURL}}/user/delete?username={username}
+```
 
-#### Apply for Leave
-Allows an authenticated user to submit a new leave request.
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
 
-* **Endpoint:** `POST /leaves`
-* **Access:** EMPLOYEE, ADMIN
-* **Authorization:** Bearer Token
-* **Request Body:**
-    ```json
-    {
-        "startDate": "YYYY-MM-DD",
-        "endDate": "YYYY-MM-DD",
-        "reason": "Reason for taking leave."
-    }
-    ```
-* **Success Response (201 Created):** Returns the newly created leave request object.
-* **Error Response (400 Bad Request):** If dates are invalid (e.g., `endDate` is before `startDate`) or the reason is empty.
+**Query Parameters:**
+- `username`: The unique identifier of the user to delete (e.g., user002)
+
+### Authentication Endpoints
+
+#### Login
+Authenticates a user and provides a token.
+
+```http
+POST {{baseURL}}/auth/login
+```
+
+**Access:** ALL USERS  
+**Authentication:** None Required
+
+**Request Body:**
+```json
+{
+    "username": "admin01",
+    "password": "password123"
+}
+```
+
+#### Logout
+Logs out the current user.
+
+```http
+GET {{baseURL}}/auth/logout
+```
+
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+### Leave Management
+
+#### Create Leave Request
+Submits a new leave request.
+
+```http
+POST {{baseURL}}/leaves
+```
+
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Request Body:**
+```json
+{
+    "startDate": "2025-08-10",
+    "endDate": "2025-08-15",
+    "reason": "Family vacation"
+}
+```
 
 #### Get All Leave Requests
-Retrieves all leave requests from all users.
+Retrieves all leave requests.
 
-* **Endpoint:** `GET /leaves/all`
-* **Access:** ADMIN only
-* **Authorization:** Bearer Token
-* **Success Response (200 OK):** Returns an array of all leave request objects.
-* **Error Response (403 Forbidden):** If a non-admin user attempts access.
+```http
+GET {{baseURL}}/leaves/all
+```
+
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
 
 #### Get Leave Requests by User
-Retrieves all leave requests submitted by the currently authenticated user.
+Retrieves leave requests for the currently authenticated user.
 
-* **Endpoint:** `GET /leaves/user`
-* **Access:** EMPLOYEE, ADMIN
-* **Authorization:** Bearer Token
-* **Success Response (200 OK):** Returns an array of the user's leave requests.
+```http
+GET {{baseURL}}/leaves/user
+```
 
-#### Approve a Leave Request
-Approves a pending leave request.
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
 
-* **Endpoint:** `PUT /leaves/approve/{leaveId}`
-* **Access:** ADMIN only
-* **Authorization:** Bearer Token
-* **Path Variable:**
-    * `leaveId` (string, required): The unique ID of the leave request.
-* **Success Response (200 OK):** Returns the updated leave request object with status `APPROVED`.
-* **Error Responses:**
-    * `403 Forbidden`: If a non-admin user attempts access.
-    * `404 Not Found`: If the `leaveId` does not correspond to an existing leave request.
+#### Approve Leave Request
+Approves a specific leave request.
 
-#### Reject a Leave Request
-Rejects a pending leave request.
+```http
+PUT {{baseURL}}/leaves/approve/{leaveId}
+```
 
-* **Endpoint:** `PUT /leaves/reject/{leaveId}`
-* **Access:** ADMIN only
-* **Authorization:** Bearer Token
-* **Path Variable:**
-    * `leaveId` (string, required): The unique ID of the leave request.
-* **Success Response (200 OK):** Returns the updated leave request object with status `REJECTED`.
-* **Error Responses:**
-    * `403 Forbidden`: If a non-admin user attempts access.
-    * `404 Not Found`: If the `leaveId` does not correspond to an existing leave request.
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Path Parameters:**
+- `leaveId`: The unique ID of the leave request (e.g., leave-id-12345)
+
+#### Reject Leave Request
+Rejects a specific leave request.
+
+```http
+PUT {{baseURL}}/leaves/reject/{leaveId}
+```
+
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Path Parameters:**
+- `leaveId`: The unique ID of the leave request (e.g., leave-id-12345)
+
+### Attendance Management
+
+#### Check-in / Check-out
+Records a user's check-in or check-out.
+
+```http
+POST {{baseURL}}/attendance/check-in
+POST {{baseURL}}/attendance/check-out
+```
+
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+#### Get All Attendance Records
+Retrieves all attendance records.
+
+```http
+GET {{baseURL}}/attendance/all
+```
+
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+#### Get User's Attendance
+Retrieves attendance records for the currently authenticated user.
+
+```http
+GET {{baseURL}}/attendance/user
+```
+
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+#### Get Today's Attendance
+Retrieves today's attendance record for the current user.
+
+```http
+GET {{baseURL}}/attendance/user/today
+```
+
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+### Payroll Management
+
+#### Generate Payroll
+Generates payroll for a specific user and month.
+
+```http
+POST {{baseURL}}/payroll/generate
+```
+
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Request Body:**
+```json
+{
+    "username": "user001",
+    "month": "092025"
+}
+```
+
+#### Get User Payroll
+Retrieves all payroll records for a specific user.
+
+```http
+GET {{baseURL}}/payroll/user/{username}
+```
+
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Path Parameters:**
+- `username`: The unique ID of the user (e.g., user001)
+
+#### Get Payroll by Month
+Retrieves a specific user's payroll for a given month.
+
+```http
+GET {{baseURL}}/payroll/{username}/{month}
+```
+
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Path Parameters:**
+- `username`: The unique ID of the user (e.g., user001)
+- `month`: The month and year (e.g., 092025)
+
+#### Get All Payrolls
+Retrieves all payroll records for all users.
+
+```http
+GET {{baseURL}}/payroll/all
+```
+
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+#### Update Payroll Status
+Updates the status of a specific payroll record.
+
+```http
+PUT {{baseURL}}/payroll/update-status
+```
+
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Request Body:**
+```json
+{
+    "id": "payroll-id-67890",
+    "status": "PAID"
+}
+```
+
+## Access Levels
+
+- **ALL USERS:** Available to all authenticated users
+- **ADMIN:** Available only to users with admin privileges
+- **AUTHENTICATED:** Requires valid authentication token
+
+## Response Formats
+
+All API responses are in JSON format. Error responses typically include:
+
+```json
+{
+    "error": "Error message",
+    "status": "error_code"
+}
+```
+
+## Getting Started
+
+1. **Start the server** on your local machine (default: `http://localhost:8080`)
+
+2. **Login** to get an authentication token:
+   ```bash
+   curl -X POST http://localhost:8080/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{
+       "username": "admin01",
+       "password": "password123"
+     }'
+   ```
+
+3. **Use the token** in subsequent requests:
+   ```bash
+   curl -X GET http://localhost:8080/user/me \
+     -H "Authorization: Bearer <your-token-here>"
+   ```
+
+4. **Explore the API** using the endpoints documented above.
+
+## Notes
+
+- Date formats should be in `YYYY-MM-DD` format
+- Month format for payroll should be `MMYYYY` (e.g., `092025` for September 2025)
+- All timestamps are handled server-side for attendance check-in/check-out
+- Ensure proper authorization levels when accessing different endpoints
+
+## Support
+
+For issues or questions about the API, please contact the development team or refer to the system administrator.

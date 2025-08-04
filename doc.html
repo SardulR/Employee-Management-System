@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMS API Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The SPA is designed as a single-page dashboard with a fixed sidebar for module-based navigation and a dynamic main content area. This structure was chosen to provide a clear, non-linear exploration path, allowing users to jump directly to the information they need (User, Leaves, etc.) rather than scrolling through a long, static document. The landing page provides a high-level statistical overview with charts, fostering initial engagement. The user flow involves a single-click navigation from the sidebar to a module's detail view, where they can interact with collapsible cards for each endpoint. This design prioritizes direct access and minimizes cognitive load. -->
+    <!-- Visualization & Content Choices:
+    - Report Info: API Endpoint Statistics -> Goal: Provide an overview -> Viz: Bar Chart & Pie Chart (Chart.js) -> Interaction: None -> Justification: Quickly visualizes the distribution of endpoints and access levels, giving a snapshot of the API's structure.
+    - Report Info: Endpoint Details -> Goal: Inform -> Viz: Collapsible cards with formatted code blocks -> Interaction: Click to expand/collapse -> Justification: Presents detailed information (URL, method, body) in a clean, on-demand manner, preventing information overload. The collapsible design is ideal for technical documentation.
+    - Report Info: Module Navigation -> Goal: Organize -> Viz: Sidebar links -> Interaction: Click to filter content -> Justification: Creates a logical, user-centric information hierarchy, allowing for easy switching between different API sections.
+    - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f3e9;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen">
+    <nav id="sidebar" class="bg-white text-gray-800 w-64 p-6 flex flex-col space-y-4 shadow-lg transition-transform duration-300 ease-in-out transform -translate-x-full md:translate-x-0 fixed md:static h-screen z-20">
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-gray-900">EMS API</h1>
+            <button id="close-sidebar" class="md:hidden text-gray-500 hover:text-gray-900 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="space-y-2 flex-grow mt-8">
+            <a href="#" data-module="dashboard" class="flex items-center space-x-2 p-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                <span class="text-lg">📊</span>
+                <span class="font-medium">Dashboard</span>
+            </a>
+            <a href="#" data-module="user" class="flex items-center space-x-2 p-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                <span class="text-lg">👤</span>
+                <span class="font-medium">User</span>
+            </a>
+            <a href="#" data-module="leaves" class="flex items-center space-x-2 p-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                <span class="text-lg">🍃</span>
+                <span class="font-medium">Leaves</span>
+            </a>
+            <a href="#" data-module="attendance" class="flex items-center space-x-2 p-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                <span class="text-lg">⏰</span>
+                <span class="font-medium">Attendance</span>
+            </a>
+            <a href="#" data-module="payroll" class="flex items-center space-x-2 p-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                <span class="text-lg">💰</span>
+                <span class="font-medium">Payroll</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="bg-white p-4 shadow-md md:hidden flex justify-between items-center z-10">
+            <h1 class="text-xl font-bold text-gray-900">EMS API</h1>
+            <button id="open-sidebar" class="text-gray-500 hover:text-gray-900 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </header>
+
+        <main id="main-content" class="flex-1 overflow-x-hidden overflow-y-auto p-8">
+            <!-- Content will be rendered here dynamically -->
+        </main>
+    </div>
+
+    <script>
+        const apiData = {
+            "user": [
+                { "name": "Register", "method": "POST", "url": "{{baseURL}}/user/create", "access": "ADMIN, AUTHENTICATED", "body": "{\n    \"name\": \"John Doe\",\n    \"phone\": \"9876543210\",\n    \"email\": \"john.doe@example.com\",\n    \"address\": \"Anytown, USA\",\n    \"department\": \"IT\",\n    \"role\": \"EMPLOYEE\",\n    \"hire_date\": \"2025-08-01\",\n    \"salary\": 50000\n}" },
+                { "name": "Get All Users", "method": "GET", "url": "{{baseURL}}/user/all", "access": "ADMIN, AUTHENTICATED" },
+                { "name": "Logout", "method": "GET", "url": "{{baseURL}}/auth/logout", "access": "ALL USERS, AUTHENTICATED" },
+                { "name": "Get Current Employee", "method": "GET", "url": "{{baseURL}}/user/me", "access": "ALL USERS, AUTHENTICATED" },
+                { "name": "Update User Details", "method": "PUT", "url": "{{baseURL}}/user/update", "access": "ALL USERS, AUTHENTICATED", "body": "{\n    \"name\": \"Jane Smith\",\n    \"phone\": \"1234567890\",\n    \"email\": \"jane.smith@example.com\",\n    \"address\": \"Somecity, USA\",\n    \"department\": \"HR\",\n    \"role\": \"MANAGER\"\n}" },
+                { "name": "Change User Role", "method": "PUT", "url": "{{baseURL}}/user/change-role?username={username}&role={role}", "access": "ADMIN, AUTHENTICATED" },
+                { "name": "Login", "method": "POST", "url": "{{baseURL}}/auth/login", "access": "ALL USERS", "body": "{\n    \"username\": \"admin01\",\n    \"password\": \"password123\"\n}" },
+                { "name": "Delete User", "method": "DELETE", "url": "{{baseURL}}/user/delete?username={username}", "access": "ADMIN, AUTHENTICATED" }
+            ],
+            "leaves": [
+                { "name": "Create Leave Request", "method": "POST", "url": "{{baseURL}}/leaves", "access": "ALL USERS, AUTHENTICATED", "body": "{\n    \"startDate\": \"2025-08-10\",\n    \"endDate\": \"2025-08-15\",\n    \"reason\": \"Family vacation\"\n}" },
+                { "name": "Get All Leave Requests", "method": "GET", "url": "{{baseURL}}/leaves/all", "access": "ADMIN, AUTHENTICATED" },
+                { "name": "Get Leave Requests by User", "method": "GET", "url": "{{baseURL}}/leaves/user", "access": "ALL USERS, AUTHENTICATED" },
+                { "name": "Approve Leave Request", "method": "PUT", "url": "{{baseURL}}/leaves/approve/{leaveId}", "access": "ADMIN, AUTHENTICATED" },
+                { "name": "Reject Leave Request", "method": "PUT", "url": "{{baseURL}}/leaves/reject/{leaveId}", "access": "ADMIN, AUTHENTICATED" }
+            ],
+            "attendance": [
+                { "name": "Check-in / Check-out", "method": "POST", "url": "{{baseURL}}/attendance/check-in", "access": "ALL USERS, AUTHENTICATED" },
+                { "name": "Get All Attendance Records", "method": "GET", "url": "{{baseURL}}/attendance/all", "access": "ADMIN, AUTHENTICATED" },
+                { "name": "Get User's Attendance", "method": "GET", "url": "{{baseURL}}/attendance/user", "access": "ALL USERS, AUTHENTICATED" },
+                { "name": "Get Today's Attendance", "method": "GET", "url": "{{baseURL}}/attendance/user/today", "access": "ALL USERS, AUTHENTICATED" }
+            ],
+            "payroll": [
+                { "name": "Generate Payroll", "method": "POST", "url": "{{baseURL}}/payroll/generate", "access": "ADMIN, AUTHENTICATED", "body": "{\n    \"username\": \"user001\",\n    \"month\": \"092025\"\n}" },
+                { "name": "Get User Payroll", "method": "GET", "url": "{{baseURL}}/payroll/user/{username}", "access": "ALL USERS, AUTHENTICATED" },
+                { "name": "Get Payroll by Month", "method": "GET", "url": "{{baseURL}}/payroll/{username}/{month}", "access": "ALL USERS, AUTHENTICATED" },
+                { "name": "Get All Payrolls", "method": "GET", "url": "{{baseURL}}/payroll/all", "access": "ADMIN, AUTHENTICATED" },
+                { "name": "Update Payroll Status", "method": "PUT", "url": "{{baseURL}}/payroll/update-status", "access": "ADMIN, AUTHENTICATED", "body": "{\n    \"id\": \"payroll-id-67890\",\n    \"status\": \"PAID\"\n}" }
+            ]
+        };
+
+        const moduleData = {
+            "User": apiData.user.length,
+            "Leaves": apiData.leaves.length,
+            "Attendance": apiData.attendance.length,
+            "Payroll": apiData.payroll.length,
+        };
+
+        const accessLevelData = {
+            "Admin": 0,
+            "All Users": 0,
+        };
+
+        Object.values(apiData).flat().forEach(endpoint => {
+            if (endpoint.access.includes("ADMIN")) {
+                accessLevelData["Admin"]++;
+            }
+            if (endpoint.access.includes("ALL USERS")) {
+                accessLevelData["All Users"]++;
+            }
+        });
+
+        const sidebar = document.getElementById('sidebar');
+        const openSidebarBtn = document.getElementById('open-sidebar');
+        const closeSidebarBtn = document.getElementById('close-sidebar');
+        const mainContent = document.getElementById('main-content');
+        const navLinks = document.querySelectorAll('#sidebar a');
+
+        function renderDashboard() {
+            mainContent.innerHTML = `
+                <div class="space-y-8">
+                    <section class="bg-white p-6 rounded-lg shadow-md">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-2">Welcome to the EMS API Dashboard</h2>
+                        <p class="text-gray-700">This interactive dashboard helps you explore the endpoints of the Employee Management System API. Use the sidebar to navigate through different modules like User, Leaves, Attendance, and Payroll. The charts below provide a quick overview of the API's structure.</p>
+                    </section>
+                    <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-800">Endpoints per Module</h3>
+                            <div class="chart-container h-64 md:h-80 max-w-xl mx-auto">
+                                <canvas id="endpoints-per-module-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h3 class="text-xl font-semibold mb-4 text-gray-800">Endpoint Access Level</h3>
+                            <div class="chart-container h-64 md:h-80 max-w-xl mx-auto">
+                                <canvas id="access-level-chart"></canvas>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            `;
+            initCharts();
+        }
+
+        function initCharts() {
+            const endpointsCtx = document.getElementById('endpoints-per-module-chart').getContext('2d');
+            new Chart(endpointsCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(moduleData),
+                    datasets: [{
+                        label: 'Number of Endpoints',
+                        data: Object.values(moduleData),
+                        backgroundColor: ['#b38b5e', '#d2b48c', '#a0522d', '#8b4513'],
+                        borderRadius: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (tooltipItem) => {
+                                    const title = tooltipItem[0].label;
+                                    return title.length > 16 ? title.match(/.{1,16}/g).join('\n') : title;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 },
+                            grid: { color: '#e5e7eb' },
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            const accessCtx = document.getElementById('access-level-chart').getContext('2d');
+            new Chart(accessCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(accessLevelData),
+                    datasets: [{
+                        label: 'Access Level',
+                        data: Object.values(accessLevelData),
+                        backgroundColor: ['#a0522d', '#d2b48c'],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((sum, current) => sum + current, 0);
+                                    const percentage = ((value / total) * 100).toFixed(2) + '%';
+                                    return `${label}: ${value} (${percentage})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderModule(moduleName) {
+            const endpoints = apiData[moduleName];
+            const title = moduleName.charAt(0).toUpperCase() + moduleName.slice(1);
+            mainContent.innerHTML = `
+                <div class="space-y-6">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">${title} API Endpoints</h2>
+                    <p class="text-gray-700">This section details the various API endpoints related to the ${title} module. Click on an endpoint to see its method, URL, required parameters, and access level.</p>
+                    <div id="endpoint-list" class="space-y-4">
+                        ${endpoints.map(endpoint => `
+                            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                                <button class="endpoint-header w-full flex items-center justify-between p-5 text-left font-semibold text-lg text-gray-800 transition-colors duration-200 hover:bg-gray-50">
+                                    <span>${endpoint.name}</span>
+                                    <span class="text-gray-500 transform transition-transform duration-200">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </span>
+                                </button>
+                                <div class="endpoint-details hidden p-5 bg-gray-50 text-gray-700 border-t border-gray-200">
+                                    <p class="mb-2"><span class="font-bold">Method:</span> <code class="bg-gray-200 text-gray-900 px-2 py-1 rounded-md">${endpoint.method}</code></p>
+                                    <p class="mb-2"><span class="font-bold">URL:</span> <code class="bg-gray-200 text-gray-900 px-2 py-1 rounded-md">${endpoint.url}</code></p>
+                                    <p class="mb-4"><span class="font-bold">Access:</span> <span class="bg-gray-200 text-gray-900 px-2 py-1 rounded-md">${endpoint.access}</span></p>
+                                    ${endpoint.body ? `
+                                        <p class="font-bold mb-2">Request Body (JSON):</p>
+                                        <pre class="bg-gray-800 text-white p-4 rounded-lg overflow-x-auto"><code class="language-json">${endpoint.body.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            document.querySelectorAll('.endpoint-header').forEach(header => {
+                header.addEventListener('click', (e) => {
+                    const details = header.nextElementSibling;
+                    const arrow = header.querySelector('svg');
+                    details.classList.toggle('hidden');
+                    arrow.classList.toggle('rotate-180');
+                });
+            });
+        }
+
+        function setActiveLink(moduleName) {
+            navLinks.forEach(link => {
+                if (link.dataset.module === moduleName) {
+                    link.classList.add('bg-gray-200');
+                    link.classList.remove('text-gray-700', 'hover:bg-gray-100');
+                } else {
+                    link.classList.remove('bg-gray-200');
+                    link.classList.add('text-gray-700', 'hover:bg-gray-100');
+                }
+            });
+        }
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const module = e.currentTarget.dataset.module;
+                if (module === 'dashboard') {
+                    renderDashboard();
+                } else {
+                    renderModule(module);
+                }
+                setActiveLink(module);
+                if (sidebar.classList.contains('-translate-x-full')) {
+                     sidebar.classList.remove('-translate-x-full');
+                }
+                sidebar.classList.add('transform', '-translate-x-full');
+            });
+        });
+
+        openSidebarBtn.addEventListener('click', () => {
+            sidebar.classList.remove('-translate-x-full');
+        });
+
+        closeSidebarBtn.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+        });
+
+        window.onload = () => {
+            renderDashboard();
+            setActiveLink('dashboard');
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 768) {
+                    sidebar.classList.remove('-translate-x-full');
+                }
+            });
+        };
+    </script>
+</body>
+</html>

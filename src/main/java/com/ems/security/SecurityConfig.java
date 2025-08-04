@@ -27,8 +27,6 @@ public class SecurityConfig {
     @Autowired
     private AuthenticationProvider authenticationProvider;
 
-
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -39,12 +37,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,"/leaves/**").hasRole("EMPLOYEE")
                         .requestMatchers(HttpMethod.GET,"/leaves/user", "/user/me/**").hasAnyRole("EMPLOYEE", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/user/update/**").hasAnyRole("EMPLOYEE", "ADMIN")
-                         // admin only endpoints
+                        .requestMatchers("/tasks/user/**").hasAnyRole("EMPLOYEE", "ADMIN")
+                        // admin only endpoints
                         .requestMatchers("/user/**",  "/leaves/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/attendance/all").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/payroll/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/payroll/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/payroll/all").hasRole("ADMIN")
+                        .requestMatchers("/tasks/**").hasRole("ADMIN")
+                        .requestMatchers("/performance/all").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

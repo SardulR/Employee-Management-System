@@ -5,6 +5,7 @@ import com.ems.dto.request.PayrollUpdateRequest;
 import com.ems.entity.Payroll;
 import com.ems.entity.UserPayrolls;
 import com.ems.service.PayrollService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public class PayrollController {
     // GENERATE PAYROLL    ACCESS: ADMIN
 
     @PostMapping("/generate")
-    public ResponseEntity<?> generatePayroll(@RequestBody PayrollRequestDto payroll){
+    public ResponseEntity<?> generatePayroll(@Valid  @RequestBody PayrollRequestDto payroll){
         Payroll generated = payrollService.generatePayroll(payroll);
         if(generated!=null){
             UserPayrolls res = payrollService.getPayrollByMonth(payroll.getUsername(), payroll.getMonth());
@@ -57,7 +58,7 @@ public class PayrollController {
 
     // UPDATE PAYROLL STATUS  ACCESS: ADMIN
     @PutMapping("/update-status")
-    public ResponseEntity<?> updatePayrollStatus(@RequestBody PayrollUpdateRequest payroll){
+    public ResponseEntity<?> updatePayrollStatus(@Valid @RequestBody PayrollUpdateRequest payroll){
 
         String res = payrollService.updateStatus(payroll.getId(), payroll.getStatus());
         return new ResponseEntity<>(Map.of("message", res), HttpStatus.OK);

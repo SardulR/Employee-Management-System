@@ -15,7 +15,7 @@ public class PayrollRequestDto {
     @NotBlank(message = "username can not be blank")
     private String username;
 
-    @NotBlank(message = "month should be in the MM YYYY format and not blank")
+    @NotBlank(message = "month should be in the MMYYYY format and not blank")
     private String month;
 
 }
