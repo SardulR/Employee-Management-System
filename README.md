@@ -13,6 +13,8 @@ A comprehensive REST API for managing employees, attendance, leave requests, and
   - [Leave Management](#leave-management)
   - [Attendance Management](#attendance-management)
   - [Payroll Management](#payroll-management)
+  - [Task Management](#task-management)
+  - [Performance Management](#performance-management)
 - [Access Levels](#access-levels)
 - [Response Formats](#response-formats)
 - [Getting Started](#getting-started)
@@ -25,6 +27,8 @@ The Employee Management System API provides endpoints for:
 - Leave request management
 - Attendance tracking
 - Payroll generation and management
+- Task assignment and tracking
+- Performance evaluation and monitoring
 
 ## Base URL
 
@@ -355,6 +359,143 @@ PUT {{baseURL}}/payroll/update-status
     "status": "PAID"
 }
 ```
+
+### Task Management
+
+#### Create Task
+Creates a new task assignment.
+
+```http
+POST {{baseURL}}/tasks/create
+```
+
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Request Body:**
+```json
+{
+    "taskName": "Update Website Landing Page",
+    "description": "Do some updation in landing page -- change name of the website form google to elgoog",
+    "username": "EMP0001",
+    "priority": "URGENT"
+}
+```
+
+**Priority Levels:**
+- `URGENT`
+- `REGULAR`
+- `LOW`
+
+#### Update Task
+Updates an existing task.
+
+```http
+PUT {{baseURL}}/tasks/update/{taskId}
+```
+
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Path Parameters:**
+- `taskId`: The unique ID of the task (e.g., 4)
+
+**Request Body:**
+```json
+{
+    "taskName": "Update Website Landing Page",
+    "description": "Do some updation in landing page -- change name of the website form google to elgoog",
+    "username": "EMP0001",
+    "priority": "REGULAR"
+}
+```
+
+#### Delete Task
+Deletes a task from the system.
+
+```http
+DELETE {{baseURL}}/tasks/delete/{taskId}
+```
+
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Path Parameters:**
+- `taskId`: The unique ID of the task to delete (e.g., 4)
+
+#### Get Task by ID
+Retrieves a specific task by its ID.
+
+```http
+GET {{baseURL}}/tasks/by-id/{taskId}
+```
+
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Path Parameters:**
+- `taskId`: The unique ID of the task (e.g., 5)
+
+#### Get Tasks by Username
+Retrieves all tasks assigned to a specific user.
+
+```http
+GET {{baseURL}}/tasks/{username}
+```
+
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Path Parameters:**
+- `username`: The unique identifier of the user (e.g., EMP0001)
+
+#### Get All Tasks
+Retrieves all tasks in the system.
+
+```http
+GET {{baseURL}}/tasks/all
+```
+
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+#### Update Task Status
+Updates the status of a specific task.
+
+```http
+PUT {{baseURL}}/tasks/update-status/{taskId}
+```
+
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Path Parameters:**
+- `taskId`: The unique ID of the task (e.g., 5)
+
+### Performance Management
+
+#### Get All User Performance
+Retrieves performance data for all users.
+
+```http
+GET {{baseURL}}/performance/all
+```
+
+**Access:** ADMIN, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+#### Get User Performance
+Retrieves performance data for a specific user.
+
+```http
+GET {{baseURL}}/performance/user/{username}
+```
+
+**Access:** ALL USERS, AUTHENTICATED  
+**Authentication:** Bearer Token Required
+
+**Path Parameters:**
+- `username`: The unique identifier of the user (e.g., EMP0001)
 
 ## Access Levels
 
